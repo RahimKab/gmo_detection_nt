@@ -14,7 +14,7 @@ nucleotide-transformer/
 dist/
 .ipynb_checkpoints/
 
-data/raw/
+data/raw/*.fna
 data/processed/
 
 *.pt
