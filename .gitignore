@@ -4,6 +4,8 @@ __pycache__/
 *.pyc
 *.pyo
 
+
+.env
 venv/
 env/
 .venv/
@@ -21,3 +23,6 @@ data/processed/
 *.pt
 *.bin
 *.ckpt
+
+training_logs/
+*.service
