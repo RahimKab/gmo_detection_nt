@@ -1,13 +1,12 @@
 from __future__ import annotations
 
 from pathlib import Path
+import pandas as pd
 import argparse
 import logging
 from typing import List, Dict, Tuple
 
-import pandas as pd
 
-import scripts.utils.common as common
 import scripts.utils.utils as utils
 
 LOG = logging.getLogger(__name__)
@@ -16,7 +15,7 @@ LOG = logging.getLogger(__name__)
 def build_all_datasets(fasta_info: List[Tuple[str, bool]], output_csv: str) -> None:
     """Construire des fichiers CSV de dataset à partir de plusieurs fichiers FASTA.
 
-    fasta_info : liste de tuples (fasta_path, isGMO)
+    fasta_info : liste de tuples (fasta_path, isGMO)  
     """
     for fasta_path, is_gmo in fasta_info:
         LOG.info("Construction du jeu de données depuis %s (isGMO=%s)", fasta_path, is_gmo)
