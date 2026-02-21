@@ -9,7 +9,7 @@ __pycache__/
 venv/
 env/
 .venv/
-.venv_nt_gpu/
+.myenv/
 
 *.egg-info/
 build/
