@@ -1,5 +1,5 @@
 import torch.nn as nn
-from transformers import AutoModel, AutoTokenizer
+from transformers import AutoModel, AutoConfig
 
 class NTForGMO(nn.Module):
     """ Prends
@@ -10,8 +10,15 @@ class NTForGMO(nn.Module):
     """
     def __init__(self, model_name):
         super().__init__()
+        config = AutoConfig.from_pretrained(model_name, trust_remote_code=True)
+        if not hasattr(config, 'is_decoder'):
+            config.is_decoder = False
+        if not hasattr(config, 'add_cross_attention'):
+            config.add_cross_attention = False
+
         self.encoder = AutoModel.from_pretrained(
             model_name,
+            config=config,
             ignore_mismatched_sizes=True,
             trust_remote_code=True
         )

@@ -1,3 +1,4 @@
+import os
 import torch
 from tqdm import tqdm
 from transformers import AutoTokenizer
@@ -9,6 +10,7 @@ from torch.amp import autocast, GradScaler
 from sklearn.metrics import (classification_report, roc_auc_score, average_precision_score, accuracy_score)
 import torch.nn.functional as F
 import utils.notification as notif
+from peft import LoraConfig, get_peft_model, TaskType
 
 PROJECT_PATH = "/home/strange/Documents/master_2/internship/model"
 TRAIN_PATH = f"{PROJECT_PATH}/data/processed/splits/sample.csv"
@@ -64,7 +66,7 @@ def train(model, train_loader, val_loader, optimizer, epochs, accum_steps, devic
             best_pr_auc = pr_auc
             torch.save(model.state_dict(), MODEL_SAVE_PATH)
             with open(LOG_PATH,"a") as file :
-                file.write(f"\nMeilleur modele sauvegarde! \n avg_loss: {avg_loss:.4f}\n accuracy: {acc:.4f}\n roc_auc: {roc_auc:.4f}\n pr_auc: {pr_auc:.4f} ")
+                file.write(f"\nMeilleur modele sauvegarde! \n avg_loss: {avg_loss:.4f}\n accuracy: {acc:.4f}\n roc_auc: {roc_auc:.4f}\n pr_auc: {pr_auc:.4f} \n")
             print(" Meilleur modele sauvegarde! ")
 
         print(f"Epoch {epoch+1} finished | Avg loss: {total_loss/len(train_loader):.4f}")
@@ -103,12 +105,13 @@ def evaluate(model, val_loader, device):
     pr_auc = average_precision_score(y_true, y_prob)
 
     with open(LOG_PATH,"a") as file :
+        file.write(f"\n {os.times}")
         file.write(f"\nResultat de la Validation")
-        file.wrtite(f"\nLoss: {avg_loss:.4f}")
+        file.write(f"\nLoss: {avg_loss:.4f}")
         file.write(f"\nAccuracy: {acc:.4f}")
         file.write(f"\nROC-AUC: {roc_auc:.4f}")
         file.write(f"\nPR-AUC: {pr_auc:.4f}")
-        file.write(f"\Rapport de la classification :\n {classification_report(y_true, y_pred, target_names=['Non-GMO', 'GMO'])}")
+        file.write(f"\nRapport de la classification :\n {classification_report(y_true, y_pred, target_names=['Non-GMO', 'GMO'])}")
         
     return avg_loss, acc, roc_auc, pr_auc
 
@@ -117,6 +120,8 @@ if __name__ == "__main__":
     try:
         MODEL_NAME = "InstaDeepAI/nucleotide-transformer-V2-250m-multi-species"
         DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
+        MAX_LEN = 2048
+        STRIDE = MAX_LEN // 2 + MAX_LEN // 4
         tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME, trust_remote_code=True)
         train_ds = GMODataset(TRAIN_PATH, tokenizer)
         val_ds   = GMODataset(VAL_PATH, tokenizer)
@@ -124,9 +129,26 @@ if __name__ == "__main__":
         val_loader = DataLoader(val_ds, batch_size=1, shuffle=False)
         model = NTForGMO(MODEL_NAME).to(DEVICE)
 
-        optimizer = AdamW(model.parameters(), lr=2e-5)
+        # optimizer = AdamW(model.parameters(), lr=2e-5)
         EPOCHS = 5
         accum_steps = 4
+
+        for name, _ in model.encoder.named_modules():
+            if "query" in name.lower() or "q_proj" in name.lower() or "qkv" in name.lower():
+                print(name)
+
+        lora_config = LoraConfig(
+            r=8,
+            lora_alpha=16,
+            target_modules=["query", "value"],
+            lora_dropout=0.1,
+            bias="none",
+        )
+
+        model.encoder = get_peft_model(model.encoder, lora_config)
+        model.encoder.print_trainable_parameters()
+
+        optimizer = AdamW(filter(lambda p: p.requires_grad, model.parameters()), lr=2e-5)
 
         train(model, train_loader, val_loader, optimizer, EPOCHS, accum_steps, DEVICE)
 
