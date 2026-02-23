@@ -102,15 +102,14 @@ def evaluate(model, val_loader, device):
     roc_auc = roc_auc_score(y_true, y_prob)
     pr_auc = average_precision_score(y_true, y_prob)
 
-    print("\nValidation Results")
-    print(f"Loss: {avg_loss:.4f}")
-    print(f"Accuracy: {acc:.4f}")
-    print(f"ROC-AUC: {roc_auc:.4f}")
-    print(f"PR-AUC: {pr_auc:.4f}")
-    print("\nDetailed classification report:")
-    print(classification_report(y_true, y_pred, target_names=["Non-GMO", "GMO"]))
-
-
+    with open(LOG_PATH,"a") as file :
+        file.write(f"\nResultat de la Validation")
+        file.wrtite(f"\nLoss: {avg_loss:.4f}")
+        file.write(f"\nAccuracy: {acc:.4f}")
+        file.write(f"\nROC-AUC: {roc_auc:.4f}")
+        file.write(f"\nPR-AUC: {pr_auc:.4f}")
+        file.write(f"\Rapport de la classification :\n {classification_report(y_true, y_pred, target_names=['Non-GMO', 'GMO'])}")
+        
     return avg_loss, acc, roc_auc, pr_auc
 
 
