@@ -4,18 +4,19 @@ from tqdm import tqdm
 from transformers import AutoTokenizer
 from utils.GmoDataset import GMODataset
 from torch.utils.data import DataLoader
-from utils.Tuning import NTForGMO
+from utils.Tuning import NTForGMO, save_checkpoint, load_checkpoint
 from torch.optim import AdamW
 from torch.amp import autocast, GradScaler
 from sklearn.metrics import (classification_report, roc_auc_score, average_precision_score, accuracy_score)
 import torch.nn.functional as F
 import utils.notification as notif
-from peft import LoraConfig, get_peft_model, TaskType
+from peft import LoraConfig, get_peft_model
 
 PROJECT_PATH = "/home/strange/Documents/master_2/internship/model"
 TRAIN_PATH = f"{PROJECT_PATH}/data/processed/splits/sample.csv"
 VAL_PATH = f"{PROJECT_PATH}/data/processed/splits/sample_val.csv"
 MODEL_SAVE_PATH = f"{PROJECT_PATH}/result/best_model.pt"
+CHECKPOINT_PATH = f"{PROJECT_PATH}/result/checkpoint.pt"
 LOG_PATH = f"{PROJECT_PATH}/result/logs.txt"
 
 def create_dataloader(dataset, batch_size=8, shuffle=True, num_workers=4):
@@ -27,11 +28,14 @@ def create_dataloader(dataset, batch_size=8, shuffle=True, num_workers=4):
         pin_memory=True
     )
 
-def train(model, train_loader, val_loader, optimizer, epochs, accum_steps, device): # Real batch_size = batch_size * accum_steps
-    scaler = GradScaler()
-    best_pr_auc = 0
 
-    for epoch in range(epochs):
+def train(model, train_loader, val_loader, optimizer, epochs, accum_steps, device, checkpoint_interval=100):
+    scaler = GradScaler()
+    
+    # Charge le checkpoint s'il existe
+    start_epoch, start_step, best_pr_auc = load_checkpoint(model, optimizer, scaler, device, CHECKPOINT_PATH)
+
+    for epoch in range(start_epoch, epochs):
         model.train()
         total_loss = 0
 
@@ -40,6 +44,9 @@ def train(model, train_loader, val_loader, optimizer, epochs, accum_steps, devic
         progress_bar = tqdm(train_loader, desc=f"Epoch {epoch+1}")
 
         for step, batch in enumerate(progress_bar):
+            # Saute des etapes deja executer lorsqu'il y a une checkpoint et reprend au dernier epoch
+            if epoch == start_epoch and step < start_step:
+                continue
 
             batch = {k: v.to(device) for k, v in batch.items()}
 
@@ -60,11 +67,22 @@ def train(model, train_loader, val_loader, optimizer, epochs, accum_steps, devic
                 "loss": total_loss / (step+1)
             })
 
+            # Enregistre les checkpoints periodiquement
+            if (step + 1) % checkpoint_interval == 0:
+                save_checkpoint(model, optimizer, scaler, epoch, step, best_pr_auc, CHECKPOINT_PATH)
+
+        # Reprend start_step apres le premier epoch
+        start_step = 0
+
+        # Enregistre le checkpoint a la fin de chaque epoch
+        save_checkpoint(model, optimizer, scaler, epoch + 1, 0, best_pr_auc)
+
         avg_loss, acc, roc_auc, pr_auc = evaluate(model, val_loader, device)
 
         if pr_auc > best_pr_auc:
             best_pr_auc = pr_auc
             torch.save(model.state_dict(), MODEL_SAVE_PATH)
+            save_checkpoint(model, optimizer, scaler, epoch + 1, 0, best_pr_auc, CHECKPOINT_PATH)  # Update checkpoint with new best
             with open(LOG_PATH,"a") as file :
                 file.write(f"\nMeilleur modele sauvegarde! \n avg_loss: {avg_loss:.4f}\n accuracy: {acc:.4f}\n roc_auc: {roc_auc:.4f}\n pr_auc: {pr_auc:.4f} \n")
             print(" Meilleur modele sauvegarde! ")
@@ -133,10 +151,7 @@ if __name__ == "__main__":
         EPOCHS = 5
         accum_steps = 4
 
-        for name, _ in model.encoder.named_modules():
-            if "query" in name.lower() or "q_proj" in name.lower() or "qkv" in name.lower():
-                print(name)
-
+        #Configuration de LoRA
         lora_config = LoraConfig(
             r=8,
             lora_alpha=16,
@@ -154,6 +169,7 @@ if __name__ == "__main__":
 
         notif.send_message("Entraînement du model terminé !")
     except Exception as e:
+        print(f"Erreur survenu: {str(e)}")
         notif.send_message(f"❌ Entraînement crashed: {str(e)}")
 
 
