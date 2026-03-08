@@ -1,280 +1,104 @@
 
+ 2026-03-08 14:16:16.853312
 Resultat de la Validation
-Loss: 4.7460
-Accuracy: 0.2474
-ROC-AUC: 0.2236
-PR-AUC: 0.6518
+Loss: 0.7146
+Accuracy: 0.5645
+ROC-AUC: 0.5147
+PR-AUC: 0.5146
 Rapport de la classification :
                precision    recall  f1-score   support
 
-     Non-GMO       0.24      0.93      0.39       321
-         GMO       0.35      0.01      0.02       936
+     Non-GMO       0.56      1.00      0.72       140
+         GMO       0.00      0.00      0.00       108
 
-    accuracy                           0.25      1257
-   macro avg       0.30      0.47      0.21      1257
-weighted avg       0.33      0.25      0.12      1257
+    accuracy                           0.56       248
+   macro avg       0.28      0.50      0.36       248
+weighted avg       0.32      0.56      0.41       248
 
 Meilleur modele sauvegarde! 
- avg_loss: 4.7460
- accuracy: 0.2474
- roc_auc: 0.2236
- pr_auc: 0.6518 
+ avg_loss: 0.7146
+ accuracy: 0.5645
+ roc_auc: 0.5147
+ pr_auc: 0.5146 
+
+ 2026-03-08 14:20:36.773345
 Resultat de la Validation
-Loss: 5.3484
-Accuracy: 0.2490
-ROC-AUC: 0.3224
-PR-AUC: 0.7512\Rapport de la classification :
+Loss: 0.7241
+Accuracy: 0.5565
+ROC-AUC: 0.5017
+PR-AUC: 0.4949
+Rapport de la classification :
                precision    recall  f1-score   support
 
-     Non-GMO       0.24      0.93      0.39       321
-         GMO       0.39      0.01      0.03       936
+     Non-GMO       0.59      0.67      0.63       140
+         GMO       0.49      0.41      0.44       108
 
-    accuracy                           0.25      1257
-   macro avg       0.32      0.47      0.21      1257
-weighted avg       0.35      0.25      0.12      1257
+    accuracy                           0.56       248
+   macro avg       0.54      0.54      0.54       248
+weighted avg       0.55      0.56      0.55       248
+
+ 2026-03-08 14:24:41.595600
+Resultat de la Validation
+Loss: 0.8282
+Accuracy: 0.6169
+ROC-AUC: 0.5624
+PR-AUC: 0.5350
+Rapport de la classification :
+               precision    recall  f1-score   support
+
+     Non-GMO       0.64      0.74      0.68       140
+         GMO       0.57      0.46      0.51       108
+
+    accuracy                           0.62       248
+   macro avg       0.61      0.60      0.60       248
+weighted avg       0.61      0.62      0.61       248
 
 Meilleur modele sauvegarde! 
- avg_loss: 5.3484
- accuracy: 0.2490
- roc_auc: 0.3224
- pr_auc: 0.7512 
+ avg_loss: 0.8282
+ accuracy: 0.6169
+ roc_auc: 0.5624
+ pr_auc: 0.5350 
+
+ 2026-03-08 14:29:26.249545
 Resultat de la Validation
-Loss: 5.9838
-Accuracy: 0.2458
-ROC-AUC: 0.3748
-PR-AUC: 0.7662\Rapport de la classification :
+Loss: 1.2128
+Accuracy: 0.6371
+ROC-AUC: 0.6021
+PR-AUC: 0.5792
+Rapport de la classification :
                precision    recall  f1-score   support
 
-     Non-GMO       0.24      0.93      0.39       321
-         GMO       0.31      0.01      0.02       936
+     Non-GMO       0.68      0.68      0.68       140
+         GMO       0.58      0.58      0.58       108
 
-    accuracy                           0.25      1257
-   macro avg       0.28      0.47      0.20      1257
-weighted avg       0.30      0.25      0.11      1257
+    accuracy                           0.64       248
+   macro avg       0.63      0.63      0.63       248
+weighted avg       0.64      0.64      0.64       248
 
 Meilleur modele sauvegarde! 
- avg_loss: 5.9838
- accuracy: 0.2458
- roc_auc: 0.3748
- pr_auc: 0.7662 
+ avg_loss: 1.2128
+ accuracy: 0.6371
+ roc_auc: 0.6021
+ pr_auc: 0.5792 
+
+ 2026-03-08 14:33:57.916637
 Resultat de la Validation
-Loss: 6.3885
-Accuracy: 0.2458
-ROC-AUC: 0.3967
-PR-AUC: 0.7726\Rapport de la classification :
+Loss: 1.5548
+Accuracy: 0.5565
+ROC-AUC: 0.6194
+PR-AUC: 0.5854
+Rapport de la classification :
                precision    recall  f1-score   support
 
-     Non-GMO       0.24      0.93      0.39       321
-         GMO       0.31      0.01      0.02       936
+     Non-GMO       0.64      0.48      0.55       140
+         GMO       0.49      0.66      0.56       108
 
-    accuracy                           0.25      1257
-   macro avg       0.28      0.47      0.20      1257
-weighted avg       0.30      0.25      0.11      1257
+    accuracy                           0.56       248
+   macro avg       0.57      0.57      0.56       248
+weighted avg       0.58      0.56      0.56       248
 
 Meilleur modele sauvegarde! 
- avg_loss: 6.3885
- accuracy: 0.2458
- roc_auc: 0.3967
- pr_auc: 0.7726 
-Resultat de la Validation
-Loss: 6.7572
-Accuracy: 0.2458
-ROC-AUC: 0.3926
-PR-AUC: 0.7709\Rapport de la classification :
-               precision    recall  f1-score   support
-
-     Non-GMO       0.24      0.93      0.39       321
-         GMO       0.31      0.01      0.02       936
-
-    accuracy                           0.25      1257
-   macro avg       0.28      0.47      0.20      1257
-weighted avg       0.30      0.25      0.11      1257
-
-Resultat de la Validation
-Loss: 2.7476
-Accuracy: 0.3356
-ROC-AUC: 0.4234
-PR-AUC: 0.6641
-Rapport de la classification :
-               precision    recall  f1-score   support
-
-     Non-GMO       0.26      0.65      0.37       767
-         GMO       0.56      0.20      0.29      1745
-
-    accuracy                           0.34      2512
-   macro avg       0.41      0.42      0.33      2512
-weighted avg       0.47      0.34      0.32      2512
-
-Meilleur modele sauvegarde! 
- avg_loss: 2.7476
- accuracy: 0.3356
- roc_auc: 0.4234
- pr_auc: 0.6641 
-Resultat de la Validation
-Loss: 6.2886
-Accuracy: 0.3089
-ROC-AUC: 0.5574
-PR-AUC: 0.7659
-Rapport de la classification :
-               precision    recall  f1-score   support
-
-     Non-GMO       0.26      0.68      0.38       767
-         GMO       0.51      0.14      0.23      1745
-
-    accuracy                           0.31      2512
-   macro avg       0.38      0.41      0.30      2512
-weighted avg       0.43      0.31      0.27      2512
-
-Meilleur modele sauvegarde! 
- avg_loss: 6.2886
- accuracy: 0.3089
- roc_auc: 0.5574
- pr_auc: 0.7659 
-Resultat de la Validation
-Loss: 6.6350
-Accuracy: 0.2086
-ROC-AUC: 0.2165
-PR-AUC: 0.5900
-Rapport de la classification :
-               precision    recall  f1-score   support
-
-     Non-GMO       0.23      0.68      0.35       767
-         GMO       0.00      0.00      0.00      1745
-
-    accuracy                           0.21      2512
-   macro avg       0.12      0.34      0.17      2512
-weighted avg       0.07      0.21      0.11      2512
-
-Resultat de la Validation
-Loss: 10.1189
-Accuracy: 0.2086
-ROC-AUC: 0.2213
-PR-AUC: 0.5932
-Rapport de la classification :
-               precision    recall  f1-score   support
-
-     Non-GMO       0.23      0.68      0.35       767
-         GMO       0.00      0.00      0.00      1745
-
-    accuracy                           0.21      2512
-   macro avg       0.12      0.34      0.17      2512
-weighted avg       0.07      0.21      0.11      2512
-
-Resultat de la Validation
-Loss: 5.0921
-Accuracy: 0.4733
-ROC-AUC: 0.3274
-PR-AUC: 0.7188
-Rapport de la classification :
-               precision    recall  f1-score   support
-
-     Non-GMO       0.37      1.00      0.54       767
-         GMO       1.00      0.24      0.39      1745
-
-    accuracy                           0.47      2512
-   macro avg       0.68      0.62      0.46      2512
-weighted avg       0.81      0.47      0.43      2512
-
- <built-in function times>
-Resultat de la Validation
-Loss: 0.4273
-Accuracy: 0.8647
-ROC-AUC: 0.9350
-PR-AUC: 0.9859
-Rapport de la classification :
-               precision    recall  f1-score   support
-
-     Non-GMO       1.00      0.10      0.18        60
-         GMO       0.86      1.00      0.93       339
-
-    accuracy                           0.86       399
-   macro avg       0.93      0.55      0.55       399
-weighted avg       0.88      0.86      0.81       399
-
-Meilleur modele sauvegarde! 
- avg_loss: 0.4273
- accuracy: 0.8647
- roc_auc: 0.9350
- pr_auc: 0.9859 
-
- <built-in function times>
-Resultat de la Validation
-Loss: 0.7694
-Accuracy: 0.8496
-ROC-AUC: 0.9358
-PR-AUC: 0.9875
-Rapport de la classification :
-               precision    recall  f1-score   support
-
-     Non-GMO       0.00      0.00      0.00        60
-         GMO       0.85      1.00      0.92       339
-
-    accuracy                           0.85       399
-   macro avg       0.42      0.50      0.46       399
-weighted avg       0.72      0.85      0.78       399
-
-Meilleur modele sauvegarde! 
- avg_loss: 0.7694
- accuracy: 0.8496
- roc_auc: 0.9358
- pr_auc: 0.9875 
-
- <built-in function times>
-Resultat de la Validation
-Loss: 0.9120
-Accuracy: 0.8496
-ROC-AUC: 0.9604
-PR-AUC: 0.9931
-Rapport de la classification :
-               precision    recall  f1-score   support
-
-     Non-GMO       0.00      0.00      0.00        60
-         GMO       0.85      1.00      0.92       339
-
-    accuracy                           0.85       399
-   macro avg       0.42      0.50      0.46       399
-weighted avg       0.72      0.85      0.78       399
-
-Meilleur modele sauvegarde! 
- avg_loss: 0.9120
- accuracy: 0.8496
- roc_auc: 0.9604
- pr_auc: 0.9931 
-
- <built-in function times>
-Resultat de la Validation
-Loss: 0.9993
-Accuracy: 0.8496
-ROC-AUC: 0.9842
-PR-AUC: 0.9972
-Rapport de la classification :
-               precision    recall  f1-score   support
-
-     Non-GMO       0.00      0.00      0.00        60
-         GMO       0.85      1.00      0.92       339
-
-    accuracy                           0.85       399
-   macro avg       0.42      0.50      0.46       399
-weighted avg       0.72      0.85      0.78       399
-
-Meilleur modele sauvegarde! 
- avg_loss: 0.9993
- accuracy: 0.8496
- roc_auc: 0.9842
- pr_auc: 0.9972 
-
- <built-in function times>
-Resultat de la Validation
-Loss: 1.0707
-Accuracy: 0.8496
-ROC-AUC: 0.9833
-PR-AUC: 0.9957
-Rapport de la classification :
-               precision    recall  f1-score   support
-
-     Non-GMO       0.00      0.00      0.00        60
-         GMO       0.85      1.00      0.92       339
-
-    accuracy                           0.85       399
-   macro avg       0.42      0.50      0.46       399
-weighted avg       0.72      0.85      0.78       399
+ avg_loss: 1.5548
+ accuracy: 0.5565
+ roc_auc: 0.6194
+ pr_auc: 0.5854 
