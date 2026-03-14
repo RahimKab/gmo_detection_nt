@@ -4,10 +4,12 @@ __pycache__/
 *.pyc
 *.pyo
 
+
+.env
 venv/
 env/
 .venv/
-.venv_nt_gpu/
+.myenv/
 
 *.egg-info/
 build/
@@ -21,3 +23,6 @@ data/processed/
 *.pt
 *.bin
 *.ckpt
+
+training_logs/
+*.service
