@@ -12,7 +12,7 @@ class GMODataset(Dataset):
         self.stride = stride
         self.max_chunks = max_chunks_per_seq
 
-        # Fais le traitement avec les le nombre de sequence maximal(512) valides (sans 'N')
+        # Fais le traitement avec les le nombre de sequence maximal
         self.chunks_per_row = []
         for seq in self.df['sequence'].astype(str):
             s = seq.upper()
@@ -44,7 +44,7 @@ class GMODataset(Dataset):
         # Trouve la ligne contenant l'indice
         row_idx = bisect.bisect_right(self.cum, idx)
         row_start_cum = self.cum[row_idx - 1] - self.chunks_per_row[row_idx] if row_idx > 0 else 0
-        local_idx = idx - row_start_cum # 
+        local_idx = idx - row_start_cum 
 
         seq = str(self.df.iloc[row_idx]['sequence']).upper()
         label = int(self.df.iloc[row_idx]['label'])

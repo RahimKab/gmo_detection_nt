@@ -19,6 +19,7 @@ dist/
 
 data/raw/*.fna
 data/processed/
+data/notebooks
 
 *.pt
 *.bin

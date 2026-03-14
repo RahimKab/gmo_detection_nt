@@ -1,8 +1,0 @@
-transformers==4.57.3
-bio==1.8.1
-biopython==1.86
-ipykernel==7.2.0
-peft==0.18.1
-scikit-learn==1.8.0
-torch==2.10.0
-tqdm==4.67.3
