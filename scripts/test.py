@@ -10,6 +10,7 @@ PROJECT_PATH = Path(__file__).resolve().parents[1]
 
 # Chemin vers le modèle fusionné (répertoire)
 MERGED_PATH = f"{PROJECT_PATH}/result/merged_model"
+SAVED_PATH = f"{PROJECT_PATH}/result"
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 
 # Seuil de confiance pour classer comme GMO
@@ -139,7 +140,7 @@ def visualize_prediction(result, output_file = 'prediction_result.png'):
     ax2.set_title('Résultat de prédiction')
     
     plt.tight_layout()
-    plt.savefig(output_file, dpi=150, bbox_inches='tight')
+    plt.savefig(f"{SAVED_PATH} /{output_file}", dpi=150, bbox_inches='tight')
     plt.close()
     print(f"Visualisation sauvegardée: {output_file}")
 
@@ -157,7 +158,7 @@ if __name__ == "__main__":
     MAX_LENGTH = 1024
     
     # Test avec séquence GMO
-    print("\n📌 Test avec séquence GMO connue:")
+    print("\n Test avec séquence GMO connue:")
     print("-" * 40)
     result_gmo = predict(DNA_GMO, MAX_LENGTH)
     print(f"Résultat: {result_gmo['label']}")
@@ -165,7 +166,7 @@ if __name__ == "__main__":
     print(f"Probabilités: Non-GMO={result_gmo['probs']['Non-GMO']*100:.2f}%, GMO={result_gmo['probs']['GMO']*100:.2f}%")
     
     # Test avec séquence Non-GMO
-    print("\n📌 Test avec séquence Non-GMO connue:")
+    print("\n Test avec séquence Non-GMO connue:")
     print("-" * 40)
     result_no_gmo = predict(DNA_NO_GMO, MAX_LENGTH)
     print(f"Résultat: {result_no_gmo['label']}")
@@ -173,8 +174,8 @@ if __name__ == "__main__":
     print(f"Probabilités: Non-GMO={result_no_gmo['probs']['Non-GMO']*100:.2f}%, GMO={result_no_gmo['probs']['GMO']*100:.2f}%")
     
     # Visualisation
-    print("\n📊 Génération des visualisations...")
+    print("\nGénération des visualisations...")
     visualize_prediction(result_gmo, 'prediction_result_gmo.png')
     visualize_prediction(result_no_gmo,'prediction_result_no_gmo.png')
     
-    print("\n✅ Tests terminés!")
+    print("\n[] Tests terminés!")

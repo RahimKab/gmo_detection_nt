@@ -37,16 +37,9 @@ def fasta_to_csv(fasta_path, csv_writer, label, name, source="GenBank", num_seq=
 		seq_id = record.id
 		if len(seq) > max_len:
 			for chunk_seq in chunk_sequence(seq, max_len, math.ceil(max_len / 2)):
-				csv_writer.writerow(
-					[
-						seq_id,
-						name,
-						chunk_seq,
-						label,
-						source,
-						len(chunk_seq),
-					]
-				)
+				csv_writer.writerow([seq_id, name, chunk_seq, label, source, 
+						 len(chunk_seq)
+						 ])
 				count += 1
 				if count >= num_seq:
 					break
@@ -57,7 +50,7 @@ def fasta_to_csv(fasta_path, csv_writer, label, name, source="GenBank", num_seq=
 		if count >= num_seq:
 			break
 
-	print(f"[OK] {count} Sequence sauvegarder vers {fasta_path}")
+	print(f"[OK] {count} Sequence sauvegarder")
 	
 
 def build_dataset(fasta_path, output_csv, is_gmo=False, num_seq=10, max_len=2048):
@@ -110,7 +103,7 @@ def mutate(seq, rate=0.001):
 
 
 def build_synthetic_gmo(plant_genomes, gmo_name, promoter_seqs, gene_seqs, terminator_seqs,
-    n_samples=1000, min_flank=50, mutation_rate=0.0005 ):
+    n_samples=1000, min_flank=50, mutation_rate=0.0005 , count=0):
 
     samples = []
     min_total = 1024
@@ -149,7 +142,7 @@ def build_synthetic_gmo(plant_genomes, gmo_name, promoter_seqs, gene_seqs, termi
 
         samples.append(
             {
-                "id": f"{gmo_name}_{len(samples):06d}",
+                "id": f"{gmo_name}_{count+len(samples):06d}",
                 "name": "synthetic_GMO",
                 "sequence": synthetic,
                 "label": 1,
@@ -278,6 +271,7 @@ def build_synthetic_sequences(nb_seq=9976):
 			terminator_seqs=terminators,
 			n_samples=nb_seq_per,
 			mutation_rate=0.0003,
+			count=count
 		)
 
 		vigna_samples = build_synthetic_gmo(
@@ -288,6 +282,7 @@ def build_synthetic_sequences(nb_seq=9976):
 			terminator_seqs=terminators,
 			n_samples=nb_seq_per,
 			mutation_rate=0.0003,
+			count=count
 		)
 
 		synthetic_samples = gossypium_samples + vigna_samples
@@ -296,7 +291,7 @@ def build_synthetic_sequences(nb_seq=9976):
 
 	print(f"[OK] {count} Sequences OMG synthetique generer")
 
-def build_val_set():
+def build_val_set(nb_seq_T):
 	oreochromis_genomes = load_fasta(RAW_DIR / "Oreochromis_niloticus_genomic.fna")
 	oreochromis_name = "Oreochromis_niloticus"
 	promoters = load_fasta(RAW_DIR / "promoters.fasta")
@@ -304,10 +299,10 @@ def build_val_set():
 	terminators = load_fasta(RAW_DIR / "terminators.fasta")
 
 	count = 0
-	nb_seq = 2000
+	nb_seq = nb_seq_T
 	while count < nb_seq:
 		Oreochromis_samples = build_synthetic_gmo(plant_genomes=oreochromis_genomes, gmo_name=oreochromis_name, promoter_seqs=promoters, gene_seqs=genes,
-			terminator_seqs=terminators, n_samples=nb_seq, mutation_rate=0.0003)
+			terminator_seqs=terminators, n_samples=nb_seq, mutation_rate=0.0003, count=count)
 		
 		count += len(Oreochromis_samples)
 		append_to_csv(Oreochromis_samples, csv_path=PROCESSED_DIR / "splits" / "val.csv")
@@ -332,17 +327,16 @@ if __name__ == "__main__":
 		"cotton_gmo.fna",
 	]
 
-	val_files = [
-		"Oreochromis_niloticus_genomic.fna"
-	]
+	val_path = RAW_DIR / "Oreochromis_niloticus_genomic.fna"
+	val_csv = split_dir / "val.csv"
 	
-	build_sequences(gen_files, dataset_path, max_len=MAX_LEN)
+	build_sequences(gen_files, dataset_path, max_len=MAX_LEN, num_seq=5000)
 	build_sequences(gmo_files, dataset_path, max_len=MAX_LEN)
 	build_synthetic_sequences(nb_seq=NB_SEQ_TRAIN_TEST)
 
 	shuffle_dataset(dataset_path)
-	split_dataset(input_csv=dataset_path, output_dir=split_dir)
 	split_dataset_train_test(input_csv=dataset_path, output_dir=split_dir)
 
-	build_dataset(val_files, split_dir / "val.csv", max_len=MAX_LEN, num_seq=2500)
-	build_val_set()
+	build_dataset(val_path, val_csv, max_len=MAX_LEN, num_seq=2000)
+	build_val_set(nb_seq_T=2000)
+	shuffle_dataset(val_csv)

@@ -279,6 +279,6 @@ if __name__ == "__main__":
         notif.send_message("Entraînement du model terminé !")
     except Exception as e:
         print(f"Erreur survenue: {str(e)}")
-        notif.send_message(f"❌ Entraînement crash: {str(e)}")
+        notif.send_message(f"[X] Entraînement crash: {str(e)}")
 
 
