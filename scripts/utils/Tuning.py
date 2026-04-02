@@ -3,7 +3,7 @@ import torch.nn as nn
 import json
 import torch
 import matplotlib.pyplot as plt
-from transformers import AutoModel, AutoConfig
+from transformers import AutoModelForSequenceClassification, AutoConfig
 
 from pathlib import Path
 
@@ -19,41 +19,46 @@ class NTForGMO(nn.Module):
     """
     def __init__(self, model_name, class_weights=None):
         super().__init__()
+        local_files_only = os.path.isdir(model_name)
         config = AutoConfig.from_pretrained(model_name, trust_remote_code=True)
         config.output_attentions = True
+        config.num_labels = 2
+        config.problem_type = "single_label_classification"
         if not hasattr(config, 'is_decoder'):
             config.is_decoder = False
         if not hasattr(config, 'add_cross_attention'):
             config.add_cross_attention = False
 
-        self.encoder = AutoModel.from_pretrained(
-            model_name,
-            config=config,
-            ignore_mismatched_sizes=True,
-            trust_remote_code=True
-        )
-        hidden_size = self.encoder.config.hidden_size
-        
+        try:
+            self.encoder = AutoModelForSequenceClassification.from_pretrained(
+                model_name,
+                config=config,
+                trust_remote_code=True,
+                local_files_only=local_files_only,
+            )
+        except RuntimeError as exc:
+            if "size mismatch" in str(exc).lower():
+                raise RuntimeError(
+                    "Echec du chargement strict des poids pre-entraines (size mismatch). "
+                    "Le cache/les fichiers locaux peuvent etre incoherents. "
+                    "Re-telecharge le modele avec scripts/download_model.py puis relance l'entrainement."
+                ) from exc
+            raise
+
         # Sauvegarde les poids de classe pour une utilisation dans la fonction de perte,
         self.class_weights = class_weights
 
-        self.classifier = nn.Sequential(
-            nn.Linear(hidden_size, 256),
-            nn.ReLU(),
-            nn.Dropout(0.2),
-            nn.Linear(256, 2)
-        )
+        # Garde un alias pour compatibilite avec scripts utilitaires existants.
+        self.classifier = self.encoder.classifier
 
     def forward(self, input_ids, attention_mask, labels=None):
         outputs = self.encoder(
             input_ids=input_ids,
-            attention_mask=attention_mask
+            attention_mask=attention_mask,
+            labels=labels,
         )
 
-        # CLS token
-        cls_emb = outputs.last_hidden_state[:, 0, :]
-
-        logits = self.classifier(cls_emb)
+        logits = outputs.logits
 
         loss = None
         if labels is not None:
@@ -61,9 +66,9 @@ class NTForGMO(nn.Module):
             # pour gérer les classes déséquilibrées
             if self.class_weights is not None:
                 weight = self.class_weights.to(logits.device)
-                loss = nn.CrossEntropyLoss(weight=weight)(logits, labels)
+                loss = nn.CrossEntropyLoss(label_smoothing=0.1, weight=weight)(logits, labels)
             else:
-                loss = nn.CrossEntropyLoss()(logits, labels)
+                loss = outputs.loss
 
         return {
             "loss": loss,
@@ -89,9 +94,24 @@ def load_checkpoint(model, optimizer, scaler, device, path=CHECKPOINT_PATH):
     """Charge le checkpoint pour reprendre l'entrainement."""
     if os.path.exists(path):
         checkpoint = torch.load(path, map_location=device, weights_only=False)
-        model.load_state_dict(checkpoint['model_state_dict'])
-        optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
-        scaler.load_state_dict(checkpoint['scaler_state_dict'])
+        try:
+            model.load_state_dict(checkpoint['model_state_dict'])
+            optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+            scaler.load_state_dict(checkpoint['scaler_state_dict'])
+        except RuntimeError as exc:
+            # Permet de continuer si l'architecture change (ex: AutoModel -> AutoModelForSequenceClassification).
+            print(
+                "Checkpoint incompatible avec l'architecture courante. "
+                "Reprise ignoree et entrainement depuis zero."
+            )
+            print(f"Detail (resume): {str(exc).splitlines()[0]}")
+            try:
+                os.remove(path)
+                print(f"Ancien checkpoint supprime: {path}")
+            except OSError:
+                pass
+            return 0, 0, 0
+
         epoch = checkpoint['epoch']
         step = checkpoint['step']
         best_pr_auc = checkpoint['best_pr_auc']
@@ -144,13 +164,24 @@ def save_history(history, path):
 
 def load_history(path):
     """Charge l'historique lorsqu'il existe."""
-    if os.path.exists(path):
-        with open(path, 'r') as f:
-            return json.load(f)
-    return {
+    default_history = {
         'train_loss': [],
         'val_loss': [],
+        'train_acc': [],
         'val_acc': [],
+        'train_f1': [],
+        'val_f1': [],
         'val_roc_auc': [],
         'val_pr_auc': []
     }
+
+    if os.path.exists(path):
+        with open(path, 'r') as f:
+            history = json.load(f)
+
+        # Complete les anciennes structures d'historique sans casser la reprise.
+        for key, value in default_history.items():
+            history.setdefault(key, value)
+        return history
+
+    return default_history
