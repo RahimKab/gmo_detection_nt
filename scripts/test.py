@@ -1,6 +1,7 @@
+import os
+import shutil
 import torch
-import torch.nn as nn
-from transformers import AutoTokenizer, AutoModel
+from transformers import AutoTokenizer, AutoModelForSequenceClassification
 import torch.nn.functional as F
 import matplotlib.pyplot as plt
 import numpy as np
@@ -8,68 +9,57 @@ import numpy as np
 from pathlib import Path
 PROJECT_PATH = Path(__file__).resolve().parents[1]
 
-# Chemin vers le modèle fusionné (répertoire)
-MERGED_PATH = f"{PROJECT_PATH}/result/merged_model"
+# Chemins des artefacts
+MERGED_MODEL_PATH = f"{PROJECT_PATH}/result/merged_model"
 SAVED_PATH = f"{PROJECT_PATH}/result"
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 
-# Seuil de confiance pour classer comme GMO
-GMO_CONFIDENCE_THRESHOLD = 0.80
+# Seuil operationnel de decision et zone d'incertitude
+DECISION_THRESHOLD = 0.50
+UNCERTAINTY_LOW = 0.30
+UNCERTAINTY_HIGH = 0.70
 
 
-class GMOClassifier(nn.Module):
-    """Charge le modèle fusionné depuis le répertoire merged_model/"""
-    
-    def __init__(self, merged_path, device="cpu"):
-        super().__init__()
-        
-        # Charge la config
-        config = torch.load(f"{merged_path}/config.pt", map_location=device, weights_only=False)
-        hidden_size = config["hidden_size"]
-        print(f"Modèle: {config.get('model_name', 'Unknown')}")
-        
-        # Charge l'encodeur fusionné
-        print(f"Chargement de l'encodeur depuis: {merged_path}/encoder")
-        self.encoder = AutoModel.from_pretrained(
-            f"{merged_path}/encoder",
-            trust_remote_code=True,
-            local_files_only=True,
-            attn_implementation="eager"  # Nécessaire pour output_attentions
+def _build_model_and_tokenizer():
+    """Charge le modele fusionne depuis result/merged_model."""
+    if not os.path.isdir(MERGED_MODEL_PATH):
+        raise FileNotFoundError(
+            f"Dossier modele introuvable: {MERGED_MODEL_PATH}. Lance d'abord save_model.sh."
         )
-        
-        # Reconstruit le classificateur
-        self.classifier = nn.Sequential(
-            nn.Linear(hidden_size, 256),
-            nn.ReLU(),
-            nn.Dropout(0.2),
-            nn.Linear(256, 2)
-        )
-        
-        # Charge les poids du classificateur
-        classifier_ckpt = torch.load(f"{merged_path}/classifier.pt", map_location=device, weights_only=False)
-        self.classifier.load_state_dict(classifier_ckpt["classifier_state_dict"])
-        print("Classificateur chargé")
 
-    def forward(self, input_ids, attention_mask):
-        outputs = self.encoder(input_ids=input_ids, attention_mask=attention_mask)
-        cls_emb = outputs.last_hidden_state[:, 0, :]
-        return {"logits": self.classifier(cls_emb)}
+    config_path = f"{MERGED_MODEL_PATH}/config.pt"
+    encoder_path = f"{MERGED_MODEL_PATH}/encoder"
+    tokenizer_path = f"{MERGED_MODEL_PATH}/tokenizer"
+
+    for needed_path in [encoder_path, tokenizer_path]:
+        if not os.path.exists(needed_path):
+            raise FileNotFoundError(f"Element manquant dans merged_model: {needed_path}")
 
 
-# Chargement du modèle
-print(f"Chargement du modèle depuis: {MERGED_PATH}")
-model = GMOClassifier(MERGED_PATH, DEVICE)
-model.to(DEVICE)
-model.eval()
+    model_name = "Unknown"
+    if os.path.exists(config_path):
+        config = torch.load(config_path, map_location=DEVICE, weights_only=False)
+        model_name = config.get("model_name", "Unknown")
+    print(f"Modele fusionner: {model_name}")
+    print(f"Chargement depuis: {MERGED_MODEL_PATH}")
 
-# Chargement du tokenizer
-print(f"Chargement du tokenizer depuis: {MERGED_PATH}/tokenizer")
-tokenizer = AutoTokenizer.from_pretrained(
-    f"{MERGED_PATH}/tokenizer",
-    trust_remote_code=True,
-    local_files_only=True
-)
+    model = AutoModelForSequenceClassification.from_pretrained(
+        encoder_path,
+        trust_remote_code=True,
+        local_files_only=True,
+    )
+    model.to(DEVICE)
+    model.eval()
 
+    tokenizer = AutoTokenizer.from_pretrained(
+        tokenizer_path,
+        trust_remote_code=True,
+        local_files_only=True,
+    )
+
+    print(f"Seuil de decision operationnel: {DECISION_THRESHOLD:.2f}")
+    print(f"Zone d'incertitude: [{UNCERTAINTY_LOW:.2f} ; {UNCERTAINTY_HIGH:.2f}]")
+    return model, tokenizer
 
 def predict(sequence, chunk_size=1024):
     """Prédit si une séquence ADN est GMO ou non."""
@@ -83,13 +73,18 @@ def predict(sequence, chunk_size=1024):
     tokens = {k: v.to(DEVICE) for k, v in tokens.items()}
     
     with torch.no_grad():
-        outputs = model(tokens["input_ids"], tokens["attention_mask"])
-        probs = F.softmax(outputs["logits"], dim=1)
+        outputs = model(input_ids=tokens["input_ids"], attention_mask=tokens["attention_mask"])
+        probs = F.softmax(outputs.logits, dim=1)
         gmo_prob = probs[0, 1].item()
-        pred = 1 if gmo_prob >= GMO_CONFIDENCE_THRESHOLD else 0
+        pred = 1 if gmo_prob >= DECISION_THRESHOLD else 0
+
+    in_uncertainty_zone = UNCERTAINTY_LOW <= gmo_prob <= UNCERTAINTY_HIGH
+    decision_label = "Incertain" if in_uncertainty_zone else ("GMO" if pred == 1 else "Non-GMO")
     
     return {
-        "label": "GMO" if pred == 1 else "Non-GMO",
+        "label": decision_label,
+        "predicted_class": "GMO" if pred == 1 else "Non-GMO",
+        "in_uncertainty_zone": in_uncertainty_zone,
         "confidence": probs[0, pred].item(),
         "probs": {"Non-GMO": probs[0, 0].item(), "GMO": probs[0, 1].item()}
     }
@@ -110,9 +105,11 @@ def visualize_prediction(result, output_file = 'prediction_result.png'):
     ax1.set_xlabel('Probabilité')
     ax1.set_title('Probabilités de classification')
     
-    # Ligne de seuil
-    ax1.axvline(x=GMO_CONFIDENCE_THRESHOLD, color='orange', linestyle='--', linewidth=2,
-                label=f'Seuil GMO ({GMO_CONFIDENCE_THRESHOLD*100:.0f}%)')
+    # Zone d'incertitude et seuil de decision
+    ax1.axvspan(UNCERTAINTY_LOW, UNCERTAINTY_HIGH, color='gray', alpha=0.12,
+                label=f'Zone d\'incertitude [{UNCERTAINTY_LOW:.2f}; {UNCERTAINTY_HIGH:.2f}]')
+    ax1.axvline(x=DECISION_THRESHOLD, color='orange', linestyle='--', linewidth=2,
+                label=f'Seuil decision ({DECISION_THRESHOLD*100:.0f}%)')
     ax1.legend(loc='lower right')
     
     # Labels sur les barres
@@ -130,7 +127,10 @@ def visualize_prediction(result, output_file = 'prediction_result.png'):
     
     confidence = result['confidence']
     conf_theta = np.linspace(0, np.pi * confidence, 100)
-    color = '#2ecc71' if result['label'] == 'Non-GMO' else '#e74c3c'
+    if result['label'] == 'Incertain':
+        color = '#f39c12'
+    else:
+        color = '#2ecc71' if result['label'] == 'Non-GMO' else '#e74c3c'
     ax2.fill_between(np.cos(conf_theta), np.sin(conf_theta), 0, color=color, alpha=0.7)
     
     ax2.text(0, 0.5, result['label'], ha='center', va='center',
@@ -140,7 +140,7 @@ def visualize_prediction(result, output_file = 'prediction_result.png'):
     ax2.set_title('Résultat de prédiction')
     
     plt.tight_layout()
-    plt.savefig(f"{SAVED_PATH} /{output_file}", dpi=150, bbox_inches='tight')
+    plt.savefig(f"{SAVED_PATH}/{output_file}", dpi=150, bbox_inches='tight')
     plt.close()
     print(f"Visualisation sauvegardée: {output_file}")
 
@@ -151,9 +151,13 @@ DNA_NO_GMO = "GTCAGAAAAATACCAAAATTTTTCAAATGCAAGCCTTGAACTTGGGACCTCACACACACCTAGAAC
 
 
 if __name__ == "__main__":
+    model, tokenizer = _build_model_and_tokenizer()
+
     print("\n" + "="*50)
-    print("TEST DU MODÈLE FUSIONNÉ - DÉTECTION GMO")
+    print("TEST DU MODELE NTFORGMO - DETECTION GMO")
     print("="*50)
+    print("Le seuil de decision 0.50 constitue une base operationnelle coherente.")
+    print("Zone d'incertitude proposee: [0.30 ; 0.70]")
     
     MAX_LENGTH = 1024
     

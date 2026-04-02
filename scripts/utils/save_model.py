@@ -1,9 +1,9 @@
 import os
+import shutil
 import torch
-from transformers import AutoTokenizer, AutoConfig
+from transformers import AutoTokenizer
 from Tuning import NTForGMO
 from peft import LoraConfig, get_peft_model
-import torch.nn as nn
 from pathlib import Path
 
 PROJECT_PATH = Path(__file__).resolve().parents[2]
@@ -25,15 +25,18 @@ def merge_and_save():
     checkpoint = torch.load(MODEL_PATH, map_location=DEVICE, weights_only=False)
     
     
+    lora_dict = checkpoint.get("lora_config", {
+        "r": 8,
+        "lora_alpha": 16,
+        "target_modules": ["query", "value"],
+        "lora_dropout": 0.1,
+        "bias": "none",
+    })
+
     model = NTForGMO(base_model)
-    lora_config = LoraConfig(
-        r=8,
-        lora_alpha=16,
-        target_modules=["query", "value"],
-        lora_dropout=0.1,
-        bias="none",
-    )
+    lora_config = LoraConfig(**lora_dict)
     model.encoder = get_peft_model(model.encoder, lora_config)
+    print(f"LoRA utilise pour fusion: {lora_dict}")
     
     model.load_state_dict(checkpoint["model_state_dict"])
     print("Poids entraînés chargés")
@@ -46,7 +49,12 @@ def merge_and_save():
     
     print("Sauvegarde de l'encodeur...")
     model.encoder.save_pretrained(f"{MERGED_PATH}/encoder")
-    
+
+    # Copie les fichiers Python de trust_remote_code dans l'artefact fusionne.
+    if os.path.isdir(base_model):
+        for py_file in Path(base_model).glob("*.py"):
+            shutil.copy2(py_file, Path(MERGED_PATH) / "encoder" / py_file.name)
+
     torch.save({
         "classifier_state_dict": model.classifier.state_dict(),
     }, f"{MERGED_PATH}/classifier.pt")

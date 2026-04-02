@@ -11,11 +11,16 @@ env/
 .venv/
 .myenv/
 
+.snakemake_env
+.snakemake
+
 *.egg-info/
 build/
 nucleotide-transformer/
 dist/
 .ipynb_checkpoints/
+
+pretrained_models/
 
 data/raw/*.fna
 data/processed/
@@ -24,6 +29,7 @@ data/notebooks
 *.pt
 *.bin
 *.ckpt
+*.gz
 
 training_logs/
 *.service

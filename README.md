@@ -12,3 +12,10 @@ grâce aux techniques de Parameter-Efficient Fine-Tuning (PEFT) comme LoRA et la
 ✓ Optimisation Low-Resource : Entraînement possible sur GPU grand public .
 ✓ Génération In-Silico : Pipeline d'assemblage de séquences synthétiques (Promoteurs, Gènes BT, Terminateurs).
 ✓ Métriques de Précision : Focus sur le F1-Score et le Rappel pour minimiser les faux négatifs.
+
+
+###### Utilisation de snakemake
+Créer un environement different et installer snakemake
+Il y'a des conflits de versions entre les bibliotheque de snakemake et ceux de transformers.
+
+• python3 -m venv .snakemake_env
